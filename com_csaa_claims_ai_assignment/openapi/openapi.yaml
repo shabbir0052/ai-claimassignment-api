@@ -1,0 +1,847 @@
+openapi: 3.0.1
+info:
+  contact:
+    email: DLDataServices@csaa.com
+    name: Data Services
+  description: Claims assignment using AI
+  title: AiClaimAssignmentAPI
+  version: 1.0.0
+servers:
+- url: http://pit-soaservices:2073/ent/csaa
+- url: https://apiportal-gw.s1.ent.rt.csaa.com/ent/csaa
+security:
+- oauth_2_0: []
+tags:
+- description: Get Claim Assignment through AI modeling
+  name: AIClaimAssignment
+- description: Processing Details
+  name: ProcessingDetails
+paths:
+  /v1/claims/ai-assignment:
+    get:
+      description: Get the details of AI model processing for a particular claim number
+      operationId: get_details
+      parameters:
+      - description: Claim Number
+        explode: true
+        in: query
+        name: claimNumber
+        required: true
+        schema:
+          example: 1000-00-0000
+          type: string
+        style: form
+      - explode: false
+        in: header
+        name: X-ApplicationContext
+        required: true
+        schema:
+          example: |
+            {
+            "userId": "user",
+            "transactionType": "realtime",
+            "application": "CAS",
+            "subSystem": "FNOL",
+            "address": "127.0.0.1",
+            "correlationId": "0f333c4c-3d35-48e8-971c-c01e74ee209a"
+            }
+          type: string
+        style: simple
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiProcessingResponse'
+          description: Successfull response
+        401:
+          content:
+            application/json:
+              example:
+                value:
+                  httpMessage: Unauthorized
+                  moreInformation: Not authorized to access resource
+                  timeStamp: Fri Jul 15 2016 12:55:14 GMT-0600 (MDT)
+              schema:
+                $ref: '#/components/schemas/Fault'
+          description: Unauthorized to use the API
+        404:
+          content:
+            application/json:
+              example:
+                value:
+                  httpMessage: Not Found
+                  moreInformation: Data Not Found
+                  timeStamp: Fri Jul 15 2016 12:55:14 GMT-0600 (MDT)
+              schema:
+                $ref: '#/components/schemas/Fault'
+          description: Details not found
+        500:
+          content:
+            application/json:
+              example:
+                value:
+                  httpMessage: Runtime Error
+                  moreInformation: API Request encountered an runtime error
+                  timeStamp: Tue Nov 03 2015 11:22:38 GMT-0700 (MST)
+              schema:
+                $ref: '#/components/schemas/Fault'
+          description: System Error
+      summary: Get the details of AI model processing for a particular claim number
+      tags:
+      - ProcessingDetails
+      x-openapi-router-controller: com_csaa_claims_ai_assignment.controllers.processing_details_controller
+    post:
+      description: AI API to determine claim eligible for STP
+      operationId: postassign
+      parameters:
+      - description: Claim Number
+        explode: true
+        in: query
+        name: claimNumber
+        required: true
+        schema:
+          example: 1000-00-0000
+          type: string
+        style: form
+      - explode: false
+        in: header
+        name: X-ApplicationContext
+        required: true
+        schema:
+          example: |
+            {
+            "userId": "user",
+            "transactionType": "realtime",
+            "application": "CAS",
+            "subSystem": "FNOL",
+            "address": "127.0.0.1",
+            "correlationId": "0f333c4c-3d35-48e8-971c-c01e74ee209a"
+            }
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Claim'
+        required: true
+      responses:
+        200:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Response'
+          description: Sucessfull Response 1
+        400:
+          content:
+            application/json:
+              example:
+                value:
+                  httpMessage: Bad Request
+                  moreInformation: Bad Request
+                  timeStamp: Fri Jul 15 2016 12:55:14 GMT-0600 (MDT)
+              schema:
+                $ref: '#/components/schemas/Fault'
+          description: Bad Request
+        401:
+          content:
+            application/json:
+              example:
+                value:
+                  httpMessage: Unauthorized
+                  moreInformation: Not authorized to access resource
+                  timeStamp: Fri Jul 15 2016 12:55:14 GMT-0600 (MDT)
+              schema:
+                $ref: '#/components/schemas/Fault'
+          description: Unauthorized to use the API
+        404:
+          content:
+            application/json:
+              example:
+                value:
+                  httpMessage: Not Found
+                  moreInformation: Data Not Found
+                  timeStamp: Fri Jul 15 2016 12:55:14 GMT-0600 (MDT)
+              schema:
+                $ref: '#/components/schemas/Fault'
+          description: Not able to Model
+        500:
+          content:
+            application/json:
+              example:
+                value:
+                  httpMessage: Runtime Error
+                  moreInformation: API Request encountered an runtime error
+                  timeStamp: Tue Nov 03 2015 11:22:38 GMT-0700 (MST)
+              schema:
+                $ref: '#/components/schemas/Fault'
+          description: System Failure
+      summary: AI API to determine claim eligible for STP
+      tags:
+      - AIClaimAssignment
+      x-openapi-router-controller: com_csaa_claims_ai_assignment.controllers.ai_claim_assignment_controller
+components:
+  schemas:
+    Response:
+      description: The root of the Response type's schema.
+      example: |-
+        {
+            "groupType": "eir_AAA",
+            "results": [
+                {
+                    "aiModel": {
+                        "name": "STP",
+                        "version": "1.0",
+                        "confidenceScore": "98"
+                    }
+                },
+                {
+                    "aiModel": {
+                        "name": "TotalLoss",
+                        "version": "1.0",
+                        "confidenceScore": "70"
+                    }
+                }
+            ]
+        }
+      properties:
+        groupType:
+          type: string
+        results:
+          items:
+            $ref: '#/components/schemas/AIResult'
+          type: array
+      title: Response
+      type: object
+    ClaimContactRole:
+      description: Role in claim contract
+      example: |-
+        {
+            "role": "reporter",
+            "coveredPartyType": "insured_AAA",
+            "policyOperatorType": "rated_AAA"
+        }
+      properties:
+        role:
+          type: string
+        coveredPartyType:
+          type: string
+        policyOperatorType:
+          type: string
+      title: ClaimContactRole
+      type: object
+    Coverage:
+      description: Coverage
+      example: "           {\r\n            \"deductible\": \"250.00 usd\",\r\n  \
+        \          \"rentalDailyLimit\": \"\",\r\n            \"type\": \"PACollisionCov\"\
+        ,\r\n            \"zeroGlassDeduct\": \"\"\r\n          }"
+      properties:
+        deductible:
+          type: string
+        rentalDailyLimit:
+          type: string
+        type:
+          type: string
+        zeroGlassDeduct:
+          type: string
+      title: Coverage
+      type: object
+    Exposure:
+      description: The root of the Exposure type's schema.
+      example: " {\r\n          \"claimant\": {\r\n            \"publicId\": \"cc:2343559009\"\
+        ,\r\n            \"driverInsuredRelation\": \"self\",\r\n            \"injured\"\
+        : \"Yes\",\r\n            \"isEmployee\": \"Yes\",\r\n            \"occupation\"\
+        : \"licensed physician\",\r\n            \"subType\": \"Person\",\r\n    \
+        \        \"taxStatus\": \"activenoexmpt_AAA\"\r\n          },\r\n        \
+        \  \"claimantType\": \"insured\",\r\n          \"coverageSubType\": \"PACollisionCov\"\
+        ,\r\n          \"exposureSubroStatus\": \"notpursuing_AAA\",\r\n         \
+        \ \"exposureType\": \"VehicleDamage\",\r\n          \"jurisdictionState\"\
+        : \"CA\",\r\n          \"lossParty\": \"insured\",\r\n          \"primaryCoverage\"\
+        : \"PACollisionCov\",\r\n          \"state\": \"draft\",\r\n          \"coverage\"\
+        : {\r\n            \"deductible\": \"250.00 usd\",\r\n            \"rentalDailyLimit\"\
+        : \"\",\r\n            \"type\": \"PACollisionCov\",\r\n            \"zeroGlassDeduct\"\
+        : \"\"\r\n          },\r\n          \"incidentPublicId\": \"cc:45657567\"\r\
+        \n        }"
+      properties:
+        claimant:
+          $ref: '#/components/schemas/Claimant'
+        claimantType:
+          type: string
+        coverageSubType:
+          type: string
+        exposureSubroStatus:
+          type: string
+        exposureType:
+          type: string
+        jurisdictionState:
+          type: string
+        lossParty:
+          type: string
+        primaryCoverage:
+          type: string
+        state:
+          type: string
+        coverage:
+          $ref: '#/components/schemas/Coverage'
+        incidentPublicId:
+          type: string
+      title: Exposure
+      type: object
+    Incident:
+      description: The root of the Incident type's schema.
+      example: "        {\r\n          \"publicid\": \"cc:45657567\",\r\n        \
+        \  \"subtype\": \"VehicleIncident\",\r\n          \"childSeat\": \"Yes\",\r\
+        \n          \"vehicleLossParty\": \"insured\",\r\n          \"driverRelation\"\
+        : \"self\",\r\n          \"insFurthInvest\": \"false\",\r\n          \"totalLoss\"\
+        : \"true\",\r\n          \"totalLossPoints\": \"0\",\r\n          \"incidentVehicle\"\
+        : {\r\n            \"publicid\": \"cc:78797865\",\r\n            \"color\"\
+        : \"red\",\r\n            \"licensePlate\": \"1C223GS56\",\r\n           \
+        \ \"make\": \"Chevrolet\",\r\n            \"mileage\": \"50000\",\r\n    \
+        \        \"model\": \"Impala\",\r\n            \"style\": \"passengercar\"\
+        ,\r\n            \"symbol\": \"35\",\r\n            \"ubi\": \"No\",\r\n \
+        \           \"year\": \"2013\"\r\n          },\r\n          \"vehicleAge10years\"\
+        : \"false\",\r\n          \"vehicleAge5years\": \"true\",\r\n          \"\
+        vehicleOperable\": \"true\",\r\n          \"vehicleParked\": \"false\",\r\n\
+        \          \"vehicleType\": \"owned\"\r\n        }"
+      properties:
+        publicid:
+          type: string
+        subtype:
+          type: string
+        childSeat:
+          type: string
+        vehicleLossParty:
+          type: string
+        driverRelation:
+          type: string
+        insFurthInvest:
+          type: string
+        totalLoss:
+          type: string
+        totalLossPoints:
+          type: string
+        incidentVehicle:
+          $ref: '#/components/schemas/Vehicle'
+        vehicleAge10years:
+          type: string
+        vehicleAge5years:
+          type: string
+        vehicleOperable:
+          type: string
+        vehicleParked:
+          type: string
+        vehicleType:
+          type: string
+      title: Incident
+      type: object
+    Claim:
+      description: The root of the Claim type's schema.
+      example: "{\r\n      \"catastropheNumber\": \"074\",\r\n      \"claimNumber\"\
+        : \"1000-00-0000\",\r\n      \"coverageInQuestion\": \"false\",\r\n      \"\
+        description\": \"collision\",\r\n      \"faultRating\": \"0\",\r\n      \"\
+        howReported\": \"phone\",\r\n      \"incidentReport\": \"false\",\r\n    \
+        \  \"liabilityCode\": \"C_AAA\",\r\n      \"lossCause\": \"parkedCollision_AAA\"\
+        ,\r\n      \"reportedByType\": \"self\",\r\n      \"subrogationStatus\": \"\
+        notpursuing_AAA\",\r\n      \"lossLocation\": {\r\n        \"publicId\": \"\
+        cc:34435468\",\r\n        \"postalCode\": \"95815-2625\",\r\n        \"state\"\
+        : \"CA\"\r\n      },\r\n      \"contacts\": [\r\n        {\r\n          \"\
+        publicId\": \"cc:123456\",\r\n          \"firstName\": \"John\",\r\n     \
+        \     \"lastName\": \"Doe\",\r\n          \"ssnTaxIDPresent\": \"Yes\",\r\n\
+        \          \"claimContactRole\": [\r\n            {\r\n              \"role\"\
+        : \"reporter\",\r\n              \"coveredPartyType\": \"insured_AAA\",\r\n\
+        \              \"policyOperatorType\": \"rated_AAA\"\r\n            },\r\n\
+        \            {\r\n              \"role\": \"insured\",\r\n              \"\
+        coveredPartyType\": \"\",\r\n              \"policyOperatorType\": \"rated_AAA\"\
+        \r\n            }\r\n          ]\r\n        }\r\n      ],\r\n      \"exposures\"\
+        : [\r\n        {\r\n          \"claimant\": {\r\n            \"publicId\"\
+        : \"cc:2343559009\",\r\n            \"driverInsuredRelation\": \"self\",\r\
+        \n            \"injured\": \"Yes\",\r\n            \"isEmployee\": \"Yes\"\
+        ,\r\n            \"occupation\": \"licensed physician\",\r\n            \"\
+        subType\": \"Person\",\r\n            \"taxStatus\": \"activenoexmpt_AAA\"\
+        \r\n          },\r\n          \"claimantType\": \"insured\",\r\n         \
+        \ \"coverageSubType\": \"PACollisionCov\",\r\n          \"exposureSubroStatus\"\
+        : \"notpursuing_AAA\",\r\n          \"exposureType\": \"VehicleDamage\",\r\
+        \n          \"jurisdictionState\": \"CA\",\r\n          \"lossParty\": \"\
+        insured\",\r\n          \"primaryCoverage\": \"PACollisionCov\",\r\n     \
+        \     \"state\": \"draft\",\r\n          \"coverage\": {\r\n            \"\
+        deductible\": \"250.00 usd\",\r\n            \"rentalDailyLimit\": \"\",\r\
+        \n            \"type\": \"PACollisionCov\",\r\n            \"zeroGlassDeduct\"\
+        : \"\"\r\n          },\r\n          \"incidentPublicId\": \"cc:45657567\"\r\
+        \n        },\r\n        {\r\n          \"claimant\": {\r\n            \"publicId\"\
+        : \"cc:2343556876\",\r\n            \"driverInsuredRelation\": \"self\",\r\
+        \n            \"injured\": \"Yes\",\r\n            \"isEmployee\": \"Yes\"\
+        ,\r\n            \"occupation\": \"licensed physician\",\r\n            \"\
+        subType\": \"Person\",\r\n            \"taxStatus\": \"activenoexmpt_AAA\"\
+        \r\n          },\r\n          \"claimantType\": \"insured\",\r\n         \
+        \ \"coverageSubType\": \"PARentalCov\",\r\n          \"state\": \"draft\"\
+        ,\r\n          \"coverage\": {\r\n            \"deductible\": \"350.00 usd\"\
+        ,\r\n            \"rentalDailyLimit\": \"\",\r\n            \"type\": \"PARentalCov\"\
+        ,\r\n            \"zeroGlassDeduct\": \"\"\r\n          },\r\n          \"\
+        incidentPublicId\": \"cc:45657567\"\r\n        }\r\n      ],\r\n      \"incidents\"\
+        : [\r\n        {\r\n          \"publicid\": \"cc:45657567\",\r\n         \
+        \ \"subtype\": \"VehicleIncident\",\r\n          \"childSeat\": \"Yes\",\r\
+        \n          \"vehicleLossParty\": \"insured\",\r\n          \"driverRelation\"\
+        : \"self\",\r\n          \"insFurthInvest\": \"false\",\r\n          \"totalLoss\"\
+        : \"true\",\r\n          \"totalLossPoints\": \"0\",\r\n          \"incidentVehicle\"\
+        : {\r\n            \"publicid\": \"cc:78797865\",\r\n            \"color\"\
+        : \"red\",\r\n            \"licensePlate\": \"1C223GS56\",\r\n           \
+        \ \"make\": \"Chevrolet\",\r\n            \"mileage\": \"50000\",\r\n    \
+        \        \"model\": \"Impala\",\r\n            \"style\": \"passengercar\"\
+        ,\r\n            \"symbol\": \"35\",\r\n            \"ubi\": \"No\",\r\n \
+        \           \"year\": \"2013\"\r\n          },\r\n          \"vehicleAge10years\"\
+        : \"false\",\r\n          \"vehicleAge5years\": \"true\",\r\n          \"\
+        vehicleOperable\": \"true\",\r\n          \"vehicleParked\": \"false\",\r\n\
+        \          \"vehicleType\": \"owned\"\r\n        },\r\n        {\r\n     \
+        \     \"publicid\": \"cc:45657589\",\r\n          \"subtype\": \"VehicleIncident\"\
+        ,\r\n          \"childSeat\": \"No\",\r\n          \"vehicleLossParty\": \"\
+        third_party\",\r\n          \"driverRelation\": \"other\",\r\n          \"\
+        insFurthInvest\": \"false\",\r\n          \"totalLoss\": \"false\",\r\n  \
+        \        \"totalLossPoints\": \"0\",\r\n          \"incidentVehicle\": {\r\
+        \n            \"publicid\": \"cc:787978698\",\r\n            \"color\": \"\
+        white\",\r\n            \"licensePlate\": \"1AB43GS56\",\r\n            \"\
+        make\": \"Honda\",\r\n            \"mileage\": \"4000\",\r\n            \"\
+        model\": \"Civic\",\r\n            \"style\": \"passengercar\",\r\n      \
+        \      \"symbol\": \"35\",\r\n            \"ubi\": \"No\",\r\n           \
+        \ \"year\": \"2013\"\r\n          },\r\n          \"vehicleAge10years\": \"\
+        false\",\r\n          \"vehicleAge5years\": \"true\",\r\n          \"vehicleOperable\"\
+        : \"true\",\r\n          \"vehicleParked\": \"false\",\r\n          \"vehicleType\"\
+        : \"owned\"\r\n        },\r\n        {\r\n          \"publicid\": \"cc:456574567\"\
+        ,\r\n          \"subtype\": \"FixedPropertyIncident\"\r\n        },\r\n  \
+        \      {\r\n          \"publicid\": \"cc:4565769890\",\r\n          \"subtype\"\
+        : \"InjuryIncident\"\r\n        }\r\n      ]\r\n    }"
+      properties:
+        catastropheNumber:
+          type: string
+        claimNumber:
+          type: string
+        coverageInQuestion:
+          type: string
+        description:
+          type: string
+        faultRating:
+          type: string
+        howReported:
+          type: string
+        incidentReport:
+          type: string
+        liabilityCode:
+          type: string
+        lossCause:
+          type: string
+        reportedByType:
+          type: string
+        subrogationStatus:
+          type: string
+        lossLocation:
+          $ref: '#/components/schemas/Addresss'
+        contacts:
+          items:
+            $ref: '#/components/schemas/Contact'
+          type: array
+        exposures:
+          items:
+            $ref: '#/components/schemas/Exposure'
+          type: array
+        incidents:
+          items:
+            $ref: '#/components/schemas/Incident'
+          type: array
+      title: Claim
+      type: object
+    AIResult:
+      description: The root of the AIResult type's schema.
+      example: |-
+        {
+                        "name": "STP",
+                        "version": "1.0",
+                        "confidenceScore": "98",
+                        "outcome": "1"
+                    }
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        confidenceScore:
+          type: string
+        outcome:
+          type: string
+      title: AIResult
+      type: object
+    Addresss:
+      description: This object represent Adress or location
+      example: |-
+        {
+            "publicID": "1234",
+            "postalCode": "85027",
+            "state": "AZ"
+        }
+      properties:
+        publicID:
+          description: 'public ID for  location address  '
+          type: string
+        postalCode:
+          description: ' Zip+4 and international codes'
+          type: string
+        state:
+          description: State Code
+          type: string
+      title: Addresss
+      type: object
+    AplicationContext:
+      description: The root of the AplicationContext type's schema.
+      example: |-
+        {
+            "userId": "user",
+            "transactionType": "realtime",
+            "application": "CAS",
+            "subSystem": "FNOL",
+            "address": "127.0.0.1",
+            "correlationId": "0f333c4c-3d35-48e8-971c-c01e74ee209a"
+        }
+      properties:
+        userId:
+          type: string
+        transactionType:
+          type: string
+        application:
+          type: string
+        subSystem:
+          type: string
+        address:
+          type: string
+        correlationId:
+          type: string
+      title: AplicationContext
+      type: object
+    Fault:
+      description: API Fault
+      properties:
+        httpCode:
+          type: string
+        httpMessage:
+          type: string
+        moreInformation:
+          type: string
+        timeStamp:
+          type: string
+      title: Fault
+      type: object
+    Contact:
+      description: Contact
+      example:
+        publicId: cc:123456
+        firstName: John
+        lastName: Doe
+        ssnTaxIDPresent: true
+        claimContactRole:
+        - role: reporter
+          coveredPartyType: insured_AAA
+          policyOperatorType: rated_AAA
+        - role: insured
+          coveredPartyType: ""
+          policyOperatorType: rated_AAA
+      properties:
+        publicId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        ssnTaxIDPresent:
+          type: string
+        claimContactRole:
+          items:
+            $ref: '#/components/schemas/ClaimContactRole'
+          type: array
+      title: Contact
+      type: object
+    Claimant:
+      description: Claimant
+      example: "{\r\n            \"publicId\": \"cc:2343559009\",\r\n            \"\
+        driverInsuredRelation\": \"self\",\r\n            \"injured\": \"Yes\",\r\n\
+        \            \"isEmployee\": \"Yes\",\r\n            \"occupation\": \"licensed\
+        \ physician\",\r\n            \"subType\": \"Person\",\r\n            \"taxStatus\"\
+        : \"activenoexmpt_AAA\"\r\n          }"
+      properties:
+        publicId:
+          type: string
+        driverInsuredRelation:
+          type: string
+        injured:
+          type: string
+        isEmployee:
+          type: string
+        occupation:
+          type: string
+        subType:
+          type: string
+        taxStatus:
+          type: string
+      title: Claimant
+      type: object
+    Vehicle:
+      description: The root of the Vehicle type's schema.
+      example: "           {\r\n            \"publicid\": \"cc:78797865\",\r\n   \
+        \         \"color\": \"red\",\r\n            \"licensePlate\": \"1C223GS56\"\
+        ,\r\n            \"make\": \"Chevrolet\",\r\n            \"mileage\": \"50000\"\
+        ,\r\n            \"model\": \"Impala\",\r\n            \"style\": \"passengercar\"\
+        ,\r\n            \"symbol\": \"35\",\r\n            \"ubi\": \"No\",\r\n \
+        \           \"year\": \"2013\"\r\n          }"
+      properties:
+        publicid:
+          type: string
+        color:
+          type: string
+        licensePlate:
+          type: string
+        make:
+          type: string
+        mileage:
+          type: string
+        model:
+          type: string
+        style:
+          type: string
+        symbol:
+          type: string
+        ubi:
+          type: string
+        year:
+          type: string
+      title: Vehicle
+      type: object
+    ApiProcessingResponse:
+      description: Provide all the details of API Processing
+      example: "{\n    \"api_request_raw\": {\n        \"claim\": {\n            \"\
+        catastropheNumber\": \"074\",\n            \"claimNumber\": \"1000-00-0000\"\
+        ,\n            \"coverageInQuestion\": \"false\",\n            \"description\"\
+        : \"collision\",\n            \"faultRating\": \"0\",\n            \"howReported\"\
+        : \"phone\",\n            \"incidentReport\": \"false\",\n            \"liabilityCode\"\
+        : \"C_AAA\",\n            \"lossCause\": \"parkedCollision_AAA\",\n      \
+        \      \"reportedByType\": \"self\",\n            \"subrogationStatus\": \"\
+        notpursuing_AAA\",\n            \"lossLocation\": {\n                \"publicId\"\
+        : \"cc:34435468\",\n                \"postalCode\": \"95815-2625\",\n    \
+        \            \"state\": \"CA\"\n            },\n            \"contacts\":\
+        \ [\n                {\n                    \"publicId\": \"cc:123456\",\n\
+        \                    \"firstName\": \"John\",\n                    \"lastName\"\
+        : \"Doe\",\n                    \"ssnTaxIDPresent\": \"Yes\",\n          \
+        \          \"claimContactRole\": [\n                        {\n          \
+        \                  \"role\": \"reporter\",\n                            \"\
+        coveredPartyType\": \"insured_AAA\",\n                            \"policyOperatorType\"\
+        : \"rated_AAA\"\n                        },\n                        {\n \
+        \                           \"role\": \"insured\",\n                     \
+        \       \"coveredPartyType\": \"\",\n                            \"policyOperatorType\"\
+        : \"rated_AAA\"\n                        }\n                    ]\n      \
+        \          }\n            ],\n            \"exposures\": [\n             \
+        \   {\n                    \"claimant\": {\n                        \"publicId\"\
+        : \"cc:2343559009\",\n                        \"driverInsuredRelation\": \"\
+        self\",\n                        \"injured\": \"Yes\",\n                 \
+        \       \"isEmployee\": \"Yes\",                                \n       \
+        \                 \"occupation\": \"licensed physician\",\n              \
+        \          \"subType\": \"Person\",\n                        \"taxStatus\"\
+        : \"activenoexmpt_AAA\"\n                    },\n                    \"claimantType\"\
+        : \"insured\",\n                    \"coverageSubType\": \"PACollisionCov\"\
+        ,\n                    \"exposureSubroStatus\": \"notpursuing_AAA\",\n   \
+        \                 \"exposureType\": \"VehicleDamage\",\n                 \
+        \   \"jurisdictionState\": \"CA\",\n                    \"lossParty\": \"\
+        insured\",\n                    \"primaryCoverage\": \"PACollisionCov\",\n\
+        \                    \"state\": \"draft\",\n                    \"coverage\"\
+        : {\n                        \"deductible\": \"250.00 usd\",\n           \
+        \             \"rentalDailyLimit\": \"\",\n                        \"type\"\
+        : \"PACollisionCov\",\n                        \"zeroGlassDeduct\": \"\"\n\
+        \                    },\n                    \"incidentPublicId\": \"cc:45657567\"\
+        \n                },\n                {\n                    \"claimant\"\
+        : {\n                        \"publicId\": \"cc:2343556876\",\n          \
+        \              \"driverInsuredRelation\": \"self\",\n                    \
+        \    \"injured\": \"Yes\",\n                        \"isEmployee\": \"Yes\"\
+        ,                                \n                        \"occupation\"\
+        : \"licensed physician\",\n                        \"subType\": \"Person\"\
+        ,\n                        \"taxStatus\": \"activenoexmpt_AAA\"\n        \
+        \            },\n                    \"claimantType\": \"insured\",\n    \
+        \                \"coverageSubType\": \"PARentalCov\",\n                 \
+        \   \"state\": \"draft\",\n                    \"coverage\": {\n         \
+        \               \"deductible\": \"350.00 usd\",\n                        \"\
+        rentalDailyLimit\": \"\",\n                        \"type\": \"PARentalCov\"\
+        ,\n                        \"zeroGlassDeduct\": \"\"\n                   \
+        \ },\n                    \"incidentPublicId\": \"cc:45657567\"\n        \
+        \        }\n            ],\n            \"incidents\": [\n               \
+        \ {\n                    \"publicid\": \"cc:45657567\",\n                \
+        \    \"subtype\": \"VehicleIncident\",\n                    \"childSeat\"\
+        : \"Yes\",\n                    \"vehicleLossParty\": \"insured\",\n     \
+        \               \"driverRelation\": \"self\",\n                    \"insFurthInvest\"\
+        : \"false\",\n                    \"totalLoss\": \"true\",\n             \
+        \       \"totalLossPoints\": \"0\",\n                    \"incidentVehicle\"\
+        : {\n                        \"publicid\": \"cc:78797865\",\n            \
+        \            \"color\": \"red\",\n                        \"licensePlate\"\
+        : \"1C223GS56\",\n                        \"make\": \"Chevrolet\",\n     \
+        \                   \"mileage\": \"50000\",\n                        \"model\"\
+        : \"Impala\",\n                        \"style\": \"passengercar\",\n    \
+        \                    \"symbol\": \"35\",\n                        \"ubi\"\
+        : \"No\",\n                        \"year\": \"2013\"\n                  \
+        \  },\n                    \"vehicleAge10years\": \"false\",\n           \
+        \         \"vehicleAge5years\": \"true\",\n                    \"vehicleOperable\"\
+        : \"true\",\n                    \"vehicleParked\": \"false\",\n         \
+        \           \"vehicleType\": \"owned\"\n                },\n             \
+        \   {\n                    \"publicid\": \"cc:45657589\",\n              \
+        \      \"subtype\": \"VehicleIncident\",\n                    \"childSeat\"\
+        : \"No\",\n                    \"vehicleLossParty\": \"third_party\",\n  \
+        \                  \"driverRelation\": \"other\",\n                    \"\
+        insFurthInvest\": \"false\",\n                    \"totalLoss\": \"false\"\
+        ,\n                    \"totalLossPoints\": \"0\",\n                    \"\
+        incidentVehicle\": {\n                        \"publicid\": \"cc:787978698\"\
+        ,\n                        \"color\": \"white\",\n                       \
+        \ \"licensePlate\": \"1AB43GS56\",\n                        \"make\": \"Honda\"\
+        ,\n                        \"mileage\": \"4000\",\n                      \
+        \  \"model\": \"Civic\",\n                        \"style\": \"passengercar\"\
+        ,\n                        \"symbol\": \"35\",\n                        \"\
+        ubi\": \"No\",\n                        \"year\": \"2013\"\n             \
+        \       },\n                    \"vehicleAge10years\": \"false\",\n      \
+        \              \"vehicleAge5years\": \"true\",\n                    \"vehicleOperable\"\
+        : \"true\",\n                    \"vehicleParked\": \"false\",\n         \
+        \           \"vehicleType\": \"owned\"\n                },\n             \
+        \   {\n                    \"publicid\": \"cc:456574567\",\n             \
+        \       \"subtype\": \"FixedPropertyIncident\"\n                },\n     \
+        \           {\n                    \"publicid\": \"cc:4565769890\",\n    \
+        \                \"subtype\": \"InjuryIncident\"\n                }\n    \
+        \        ]\n        }\n    },\n    \"api_response_raw\": {\n        \"groupType\"\
+        : \"eir_AAA\",\n        \"results\": [\n            {\n                \"\
+        aiModel\": {\n                    \"name\": \"STP\",\n                   \
+        \ \"version\": \"1.0\",\n                    \"confidenceScore\": \"98\",\n\
+        \                    \"outcome\": \"1\"\n                }\n            },\n\
+        \            {\n                \"aiModel\": {\n                    \"name\"\
+        : \"TotalLoss\",\n                    \"version\": \"1.0\",\n            \
+        \        \"confidenceScore\": \"70\",\n                    \"outcome\": \"\
+        0\"\n                }\n            }\n        ]\n    },\n    \"api_request_processed\"\
+        : \"{\\\"claim_addr_postalcode\\\": \\\"\\\",\\\"claim_addr_state\\\": 10007,\\\
+        \"claim_catastropheid\\\": \\\"\\\",\\\"claim_ccq\\\": 0,\\\"claim_claimnumber\\\
+        \": \\\"1000-74-2578\\\",\\\"claim_claimtier\\\": 10003,\\\"claim_coverageinquestion\\\
+        \": 0,\\\"claim_description\\\": \\\"V1 was parked next to a cement flower\
+        \ box and didnt realize it and backed into it\\\",\\\"claim_faultrating\\\"\
+        : 10005,\\\"claim_howreported\\\": 10009,\\\"claim_incidentreport\\\": 0,\\\
+        \"claim_liabilitycode_aaa\\\": 10006,\\\"claim_losscause\\\": 10020,\\\"claim_reportedbytype\\\
+        \": 10001,\\\"claim_subrogationstatus\\\": 10002,\\\"exposure1_claimant_cont_driverinsuredrelation_aaa\\\
+        \": 10001,\\\"exposure1_claimant_cont_injured_aaa\\\": 2,\\\"exposure1_claimant_cont_isaaaemployee_aaa\\\
+        \": 2,\\\"exposure1_claimant_cont_licensenumber\\\": \\\"B3088331\\\",\\\"\
+        exposure1_claimant_cont_occupation\\\": \\\"Other\\\",\\\"exposure1_claimant_cont_subtype\\\
+        \": 1,\\\"exposure1_claimant_cont_taxstatus_aaa\\\": 10001,\\\"exposure1_exp_claimanttype\\\
+        \": 10001,\\\"exposure1_exp_cov_deductible\\\": 500,\\\"exposure1_exp_cov_rentaldailylimit_aaa\\\
+        \": \\\"\\\",\\\"exposure1_exp_cov_type\\\": 10005,\\\"exposure1_exp_cov_zeroglassdeduct_aaa\\\
+        \": \\\"\\\",\\\"exposure1_exp_coveragesubtype\\\": 10009,\\\"exposure1_exp_exposuresubrostatus_aaa\\\
+        \": 10002,\\\"exposure1_exp_exposuretype\\\": 5,\\\"exposure1_exp_jurisdictionstate\\\
+        \": 10007,\\\"exposure1_exp_lossparty\\\": 10001,\\\"exposure1_exp_primarycoverage\\\
+        \": 10005,\\\"exposure1_exp_state\\\": 3,\\\"exposure1_inc_childseat_aaa\\\
+        \": 2,\\\"exposure1_inc_driverrelation\\\": 10001,\\\"exposure1_inc_insfurthinvest_aaa\\\
+        \": \\\"\\\",\\\"exposure1_inc_totalloss\\\": \\\"\\\",\\\"exposure1_inc_totallosspoints\\\
+        \": 5,\\\"exposure1_inc_veh_color\\\": \\\"Gray\\\",\\\"exposure1_inc_veh_licenseplate\\\
+        \": \\\"6HPX713\\\",\\\"exposure1_inc_veh_make\\\": \\\"TOYOTA\\\",\\\"exposure1_inc_veh_mileage_aaa\\\
+        \": 85500,\\\"exposure1_inc_veh_model\\\": \\\"SEQUOIA\\\",\\\"exposure1_inc_veh_style\\\
+        \": 10002,\\\"exposure1_inc_veh_symbol_aaa\\\": 27,\\\"exposure1_inc_veh_ubi_aaa\\\
+        \": \\\"\\\",\\\"exposure1_inc_veh_vin\\\": \\\"5TDZY68A48S001239\\\",\\\"\
+        exposure1_inc_veh_year\\\": 2008,\\\"exposure1_inc_vehicleage10years\\\":\
+        \ 0,\\\"exposure1_inc_vehicleage5years\\\": 1,\\\"exposure1_inc_vehicleoperable\\\
+        \": 1,\\\"exposure1_inc_vehicleparked\\\": 0,\\\"exposure1_inc_vehicletype\\\
+        \": 10001,\\\"exposure2_claimant_cont_driverinsuredrelation_aaa\\\": 4,\\\"\
+        exposure2_claimant_cont_injured_aaa\\\": \\\"95519-4223\\\",\\\"exposure2_claimant_cont_isaaaemployee_aaa\\\
+        \": 10001,\\\"exposure2_claimant_cont_licensenumber\\\": 2,\\\"exposure2_claimant_cont_occupation\\\
+        \": 2,\\\"exposure2_claimant_cont_subtype\\\": \\\"B3088331\\\",\\\"exposure2_claimant_cont_taxstatus_aaa\\\
+        \": \\\"Other\\\",\\\"exposure2_exp_claimanttype\\\": 1,\\\"exposure2_exp_cov_deductible\\\
+        \": 10001,\\\"exposure2_exp_cov_rentaldailylimit_aaa\\\": \\\"\\\",\\\"exposure2_exp_cov_type\\\
+        \": 750,\\\"exposure2_exp_cov_zeroglassdeduct_aaa\\\": 25,\\\"exposure2_exp_coveragesubtype\\\
+        \": 10018,\\\"exposure2_exp_exposuresubrostatus_aaa\\\": \\\"\\\",\\\"exposure2_exp_exposuretype\\\
+        \": 10002,\\\"exposure2_exp_jurisdictionstate\\\": 10006,\\\"exposure2_exp_lossparty\\\
+        \": 5,\\\"exposure2_exp_primarycoverage\\\": 10007,\\\"exposure2_exp_state\\\
+        \": 10001,\\\"exposure2_inc_childseat_aaa\\\": 0,\\\"exposure2_inc_driverrelation\\\
+        \": \\\"\\\",\\\"exposure2_inc_insfurthinvest_aaa\\\": \\\"\\\",\\\"exposure2_inc_totalloss\\\
+        \": 10001,\\\"exposure2_inc_totallosspoints\\\": \\\"\\\",\\\"exposure2_inc_veh_color\\\
+        \": \\\"\\\",\\\"exposure2_inc_veh_licenseplate\\\": \\\"\\\",\\\"exposure2_inc_veh_make\\\
+        \": \\\"6HPX713\\\",\\\"exposure2_inc_veh_mileage_aaa\\\": \\\"\\\",\\\"exposure2_inc_veh_model\\\
+        \": \\\"TOYOTA\\\",\\\"exposure2_inc_veh_style\\\": 85500,\\\"exposure2_inc_veh_symbol_aaa\\\
+        \": \\\"SEQUOIA\\\",\\\"exposure2_inc_veh_ubi_aaa\\\": 10002,\\\"exposure2_inc_veh_vin\\\
+        \": 27,\\\"exposure2_inc_veh_year\\\": \\\"\\\",\\\"exposure2_inc_vehicleage10years\\\
+        \": \\\"5TDZY68A48S001239\\\",\\\"exposure2_inc_vehicleage5years\\\": 2008,\\\
+        \"exposure2_inc_vehicleoperable\\\": 1,\\\"exposure2_inc_vehicleparked\\\"\
+        : \\\"\\\",\\\"exposure2_inc_vehicletype\\\": 1,\\\"exposure3_claimant_cont_driverinsuredrelation_aaa\\\
+        \": \\\"\\\",\\\"exposure3_claimant_cont_injured_aaa\\\": \\\"\\\",\\\"exposure3_claimant_cont_isaaaemployee_aaa\\\
+        \": \\\"\\\",\\\"exposure3_claimant_cont_licensenumber\\\": \\\"\\\",\\\"\
+        exposure3_claimant_cont_occupation\\\": \\\"\\\",\\\"exposure3_claimant_cont_subtype\\\
+        \": \\\"\\\",\\\"exposure3_claimant_cont_taxstatus_aaa\\\": \\\"\\\",\\\"\
+        exposure3_exp_claimanttype\\\": \\\"\\\",\\\"exposure3_exp_cov_deductible\\\
+        \": \\\"\\\",\\\"exposure3_exp_cov_rentaldailylimit_aaa\\\": \\\"\\\",\\\"\
+        exposure3_exp_cov_type\\\": \\\"\\\",\\\"exposure3_exp_cov_zeroglassdeduct_aaa\\\
+        \": \\\"\\\",\\\"exposure3_exp_coveragesubtype\\\": \\\"\\\",\\\"exposure3_exp_exposuresubrostatus_aaa\\\
+        \": \\\"\\\",\\\"exposure3_exp_exposuretype\\\": \\\"\\\",\\\"exposure3_exp_jurisdictionstate\\\
+        \": \\\"\\\",\\\"exposure3_exp_lossparty\\\": \\\"\\\",\\\"exposure3_exp_primarycoverage\\\
+        \": \\\"\\\",\\\"exposure3_exp_state\\\": \\\"\\\",\\\"exposure3_inc_childseat_aaa\\\
+        \": \\\"\\\",\\\"exposure3_inc_driverrelation\\\": \\\"\\\",\\\"exposure3_inc_insfurthinvest_aaa\\\
+        \": \\\"\\\",\\\"exposure3_inc_veh_color\\\": \\\"\\\",\\\"exposure3_inc_veh_licenseplate\\\
+        \": \\\"\\\",\\\"exposure3_inc_veh_make\\\": \\\"\\\",\\\"exposure3_inc_veh_mileage_aaa\\\
+        \": \\\"\\\",\\\"exposure3_inc_veh_model\\\": \\\"\\\",\\\"exposure3_inc_veh_style\\\
+        \": \\\"\\\",\\\"exposure3_inc_veh_symbol_aaa\\\": \\\"\\\",\\\"exposure3_inc_veh_ubi_aaa\\\
+        \": \\\"\\\",\\\"exposure3_inc_veh_vin\\\": \\\"\\\",\\\"exposure3_inc_veh_year\\\
+        \": \\\"\\\",\\\"exposure3_inc_vehicleage10years\\\": \\\"\\\",\\\"exposure3_inc_vehicleage5years\\\
+        \": \\\"\\\",\\\"exposure3_inc_vehicleoperable\\\": \\\"\\\",\\\"exposure3_inc_vehicleparked\\\
+        \": \\\"\\\",\\\"exposure3_inc_vehicletype\\\": \\\"\\\",\\\"party1_taxid_indicator\\\
+        \": \\\"\\\",\\\"party2_taxid_indicator\\\": \\\"\\\",\\\"party3_taxid_indicator\\\
+        \": \\\"\\\",\\\"party4_taxid_indicator\\\": \\\"\\\",\\\"party5_taxid_indicator\\\
+        \": \\\"\\\",\\\"party6_taxid_indicator\\\": \\\"\\\",\\\"party7_taxid_indicator\\\
+        \": \\\"\\\",\\\"party8_taxid_indicator\\\": \\\"\\\",\\\"party9_taxid_indicator\\\
+        \": \\\"\\\",\\\"party10_taxid_indicator\\\": \\\"\\\",\\\"party11_taxid_indicator\\\
+        \": \\\"\\\",\\\"party12_taxid_indicator\\\": \\\"\\\",\\\"party13_taxid_indicator\\\
+        \": \\\"\\\",\\\"party14_taxid_indicator\\\": \\\"\\\",\\\"party15_taxid_indicator\\\
+        \": \\\"\\\",\\\"party16_taxid_indicator\\\": \\\"\\\",\\\"party17_taxid_indicator\\\
+        \": \\\"\\\",\\\"party18_taxid_indicator\\\": \\\"\\\",\\\"party19_taxid_indicator\\\
+        \": \\\"\\\",\\\"party20_taxid_indicator\\\": \\\"\\\",\\\"party1_policy_indicator\\\
+        \": \\\"\\\",\\\"party2_policy_indicator\\\": \\\"\\\",\\\"party3_policy_indicator\\\
+        \": \\\"\\\",\\\"party4_policy_indicator\\\": \\\"\\\",\\\"party5_policy_indicator\\\
+        \": \\\"\\\",\\\"party6_policy_indicator\\\": \\\"\\\",\\\"party7_policy_indicator\\\
+        \": \\\"\\\",\\\"party8_policy_indicator\\\": \\\"\\\",\\\"party9_policy_indicator\\\
+        \": \\\"\\\",\\\"party10_policy_indicator\\\": \\\"\\\",\\\"party11_policy_indicator\\\
+        \": \\\"\\\",\\\"party12_policy_indicator\\\": \\\"\\\",\\\"party13_policy_indicator\\\
+        \": \\\"\\\",\\\"party14_policy_indicator\\\": \\\"\\\",\\\"party15_policy_indicator\\\
+        \": \\\"\\\",\\\"party16_policy_indicator\\\": \\\"\\\",\\\"party17_policy_indicator\\\
+        \": \\\"\\\",\\\"party18_policy_indicator\\\": \\\"\\\",\\\"party19_policy_indicator\\\
+        \": \\\"\\\",\\\"party20_policy_indicator\\\": \\\"\\\"  }\",\n    \"ai_model_details\"\
+        : [\n        {\n            \"aiModel\": {\n                \"name\": \"STP\"\
+        ,\n                \"version\": \"1.0\",\n                \"confidenceScore\"\
+        : \"98\",\n                \"outcome\": \"1\"\n            }\n        },\n\
+        \        {\n            \"aiModel\": {\n                \"name\": \"STP\"\
+        ,\n                \"version\": \"1.0\",\n                \"confidenceScore\"\
+        : \"70\",\n                \"outcome\": \"0\"\n            }\n        }\n\
+        \    ],\n    \"metadata\": {\n        \"createdAt\": \"2019-03-20T22:34:55.230Z\"\
+        ,\n        \"updatedAt\": \"2019-03-20T22:34:55.230Z\"\n    }\n}"
+      properties:
+        api_request_raw:
+          $ref: '#/components/schemas/Claim'
+        api_response_raw:
+          $ref: '#/components/schemas/Response'
+        api_request_processed:
+          type: string
+        ai_model_details:
+          items:
+            $ref: '#/components/schemas/AIResult'
+          type: array
+        metadata:
+          $ref: '#/components/schemas/ApiProcessingResponse_metadata'
+      title: ApiProcessingResponse
+      type: object
+    ApiProcessingResponse_metadata:
+      properties:
+        createdAt:
+          format: date-time
+          type: string
+        updatedAt:
+          format: date-time
+          type: string
+  securitySchemes:
+    oauth_2_0:
+      description: |
+        OAuth 2 for authenticating the API
+      flows:
+        clientCredentials:
+          refreshUrl: https://dev-sso.tent.trt.csaa.pri/as/token.oauth2
+          tokenUrl: https://dev-sso.tent.trt.csaa.pri/as/token.oauth2
+      type: oauth2
+      x-tokenInfoFunc: com_csaa_claims_ai_assignment.controllers.security_controller_.info_from_oauth_2_0
+      x-scopeValidateFunc: com_csaa_claims_ai_assignment.controllers.security_controller_.validate_scope_oauth_2_0

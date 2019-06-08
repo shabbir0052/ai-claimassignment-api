@@ -1,0 +1,20 @@
+# coding: utf-8
+
+# flake8: noqa
+from __future__ import absolute_import
+# import models into model package
+from com_csaa_claims_ai_assignment.models.ai_result import AIResult
+from com_csaa_claims_ai_assignment.models.addresss import Addresss
+from com_csaa_claims_ai_assignment.models.api_processing_response import ApiProcessingResponse
+from com_csaa_claims_ai_assignment.models.api_processing_response_metadata import ApiProcessingResponseMetadata
+from com_csaa_claims_ai_assignment.models.aplication_context import AplicationContext
+from com_csaa_claims_ai_assignment.models.claim import Claim
+from com_csaa_claims_ai_assignment.models.claim_contact_role import ClaimContactRole
+from com_csaa_claims_ai_assignment.models.claimant import Claimant
+from com_csaa_claims_ai_assignment.models.contact import Contact
+from com_csaa_claims_ai_assignment.models.coverage import Coverage
+from com_csaa_claims_ai_assignment.models.exposure import Exposure
+from com_csaa_claims_ai_assignment.models.fault import Fault
+from com_csaa_claims_ai_assignment.models.incident import Incident
+from com_csaa_claims_ai_assignment.models.response import Response
+from com_csaa_claims_ai_assignment.models.vehicle import Vehicle
