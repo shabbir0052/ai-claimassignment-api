@@ -1,1 +1,1 @@
-APP_FILE=ai-claimassignment-api/__main__.py
+APP_MODULE=com_csaa_claims_ai_assignment.__main__:main
