@@ -1,4 +1,4 @@
-FROM python:3-alpine
+FROM registry.access.redhat.com/rhscl/python-36-rhel7
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
