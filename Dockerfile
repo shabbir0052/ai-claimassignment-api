@@ -1,4 +1,4 @@
-FROM python:3-alpine
+FROM registry.opensource.zalan.do/stups/python:3.6.5-22
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
