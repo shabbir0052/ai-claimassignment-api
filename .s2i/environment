@@ -1,1 +1,1 @@
-APP_MODULE=com_csaa_claims_ai_assignment.__main__:main
+APP_MODULE=com_csaa_claims_ai_assignment:app
