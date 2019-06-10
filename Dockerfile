@@ -1,4 +1,5 @@
-FROM registry.opensource.zalan.do/stups/python:3.6.5-22
+FROM registry.access.redhat.com/rhscl/python-36-rhel7
+
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
