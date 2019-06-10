@@ -1,13 +1,13 @@
-FROM registry.opensource.zalan.do/stups/python:3.6.5-22
+FROM registry.access.redhat.com/rhel8/python-36:latest
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+# RUN mkdir -p /usr/src/app
+WORKDIR /opt/app-root/
 
-COPY requirements.txt /usr/src/app/
+COPY requirements.txt /opt/app-root/
 
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . /usr/src/app
+COPY . /opt/app-root
 
 EXPOSE 8080
 

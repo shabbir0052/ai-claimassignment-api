@@ -5,7 +5,7 @@ import connexion
 from com_csaa_claims_ai_assignment import encoder
 
 
-def main():
+def application():
     #app = connexion.App(__name__, specification_dir='./openapi/')
     app = connexion.App(__name__, specification_dir='./openapi/', server='gevent')
     app.app.json_encoder = encoder.JSONEncoder
@@ -16,4 +16,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    application()
